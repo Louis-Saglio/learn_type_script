@@ -1,9 +1,19 @@
-import { BaseModel, ModelConfig, ModelIdType } from './model';
+import {
+  BaseModel, ModelConfig, ModelIdType, RelationType,
+} from './model';
+import Album from './album';
 
 export default class Photo extends BaseModel {
-  static config: ModelConfig = { endpoint: 'photo' }
-
-  protected endpoint = 'photo'
+  static config: ModelConfig = {
+    endpoint: 'photo',
+    relations: {
+      albums: {
+        type: RelationType.BelongsTo,
+        model: 'Album', // Cannot use actual model because of circular import
+        foreignKey: 'albumId',
+      },
+    },
+  }
 
   id!: ModelIdType
 

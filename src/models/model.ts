@@ -24,7 +24,7 @@ interface FindByIdOptions {
   includes: string[];
 }
 
-enum RelationType {
+export enum RelationType {
   BelongsTo = 'belongsTo',
   HasMany = 'hasMany',
 }
@@ -34,7 +34,7 @@ enum RelationType {
  */
 interface Relation {
   /** Type of the relation: hasMany, belongsTo, ... */
-  types: RelationType;
+  type: RelationType;
   /** The target Model */
   model: any;
   /**
@@ -57,17 +57,13 @@ export interface ModelConfig {
 }
 
 export abstract class BaseModel {
-  static readonly apiUrl = 'https://jsonplaceholder.typicode.com'
+  static readonly apiUrl = process.env.API_BASE_URL || 'https://jsonplaceholder.typicode.com'
 
   protected abstract id: ModelIdType
 
   static path: string
 
   static config: ModelConfig
-
-  // If config is static it is available in static methods. If it is dynamic, it available in dynamic methods.
-  // But we need it in both.
-  // protected static config: ModelConfig
 
   constructor(data: any) {
     // super(data.id)
@@ -77,9 +73,30 @@ export abstract class BaseModel {
   static async findById<T extends BaseModel>(
     this: ClassModel<T>,
     id: number,
+    options?: FindByIdOptions,
   ): Promise<T> {
     const url = `${this.apiUrl}/${this.config.endpoint}s/${id}`;
     const data = await (await fetch(url)).json();
+    if (options !== undefined) {
+      for (const include of options.includes) {
+        // @ts-ignore
+        const relation_data = this.config.relations[include]
+        if (relation_data !== undefined) {
+          if (relation_data.type === RelationType.BelongsTo) {
+            // todo problem : relation_data.model maybe be undefined due to circular import
+            data[include] = await (
+              await fetch(`${this.apiUrl}/${relation_data.model.config.endpoint}s/${data.id}`)
+            ).json()
+          } else if (relation_data.type === RelationType.HasMany) {
+            data[include] = await (
+              await fetch(
+                `${this.apiUrl}/${relation_data.model.config.endpoint}s?${relation_data.foreignKey}=${id}`,
+              )
+            ).json()
+          }
+        }
+      }
+    }
     return new this(data)
   }
 

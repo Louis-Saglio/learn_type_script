@@ -1,6 +1,8 @@
-import { BaseModel, ModelConfig, ModelIdType } from './model';
+import {
+  BaseModel, ModelConfig, ModelIdType, RelationType,
+} from './model';
+import Album from './album';
 
-// todo use these interfaces
 interface Address {
   street: string;
   suite: string;
@@ -8,7 +10,7 @@ interface Address {
   zipcode: string;
   phone: string;
   website: string;
-  geo: Geo;
+  geo: Geo; // Why is it folded sometimes (always ?)
 }
 
 interface Geo {
@@ -23,9 +25,16 @@ interface Company {
 }
 
 export default class User extends BaseModel {
-  static config: ModelConfig = { endpoint: 'user' }
-
-  protected endpoint = 'user'
+  static config: ModelConfig = {
+    endpoint: 'user',
+    relations: {
+      albums: {
+        type: RelationType.HasMany,
+        model: 'Album', // Cannot use actual model because of circular import
+        foreignKey: 'userId',
+      },
+    },
+  }
 
   id!: ModelIdType
 
@@ -34,4 +43,8 @@ export default class User extends BaseModel {
   username!: string
 
   email!: string
+
+  address!: Address
+
+  company!: Company
 }
