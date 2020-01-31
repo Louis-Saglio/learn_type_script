@@ -64,8 +64,8 @@ export abstract class BaseModel {
   protected abstract endpoint: string
 
   // If config is static it is available in static methods. If it is dynamic, it available in dynamic methods.
-  // But we need it in both
-  protected static config: ModelConfig
+  // But we need it in both.
+  // protected static config: ModelConfig
 
   static async findById<T extends BaseModel>(
     this: ClassModel<T>,

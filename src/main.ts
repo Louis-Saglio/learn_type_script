@@ -1,5 +1,7 @@
 import Album from './models/album'
 import { QueryFilterOrder } from './models/model'
+import User from './models/user';
+import Photo from './models/photo';
 
 async function run(): Promise<void> {
   const album = await Album.findById<Album>(1)
@@ -11,6 +13,12 @@ async function run(): Promise<void> {
   );
   album.title = 'toto'
   await album.save<Album>()
+  const user = await User.create({
+    email: 'l.saglio@gmail.com', id: 42, name: 'saglio', username: 'lasglio',
+  })
+  await user.remove()
+  await Photo.deleteById(5)
+  await Photo.updateById(2, { title: 'new title' })
 }
 
 run().catch((err) => {
