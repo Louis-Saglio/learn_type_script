@@ -1,6 +1,6 @@
-import { BaseModel, ModelIdType } from './model';
+import { BaseModel, ModelConfig, ModelIdType } from './model';
 
-
+// todo use these interfaces
 interface Address {
   street: string;
   suite: string;
@@ -23,6 +23,8 @@ interface Company {
 }
 
 export default class User extends BaseModel {
+  static config: ModelConfig = { endpoint: 'user' }
+
   protected endpoint = 'user'
 
   id!: ModelIdType

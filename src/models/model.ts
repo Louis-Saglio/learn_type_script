@@ -3,7 +3,7 @@ import { NonFunctionKeys } from 'utility-types'
 
 type SchemaOf<T extends BaseModel> = Pick<T, NonFunctionKeys<T>>
 
-type ClassModel<T extends BaseModel> = {new(data: any): T; apiUrl: string}
+type ClassModel<T extends BaseModel> = {new(data: any): T; apiUrl: string; config: ModelConfig}
 
 export type ModelIdType = number | string
 
@@ -61,7 +61,9 @@ export abstract class BaseModel {
 
   protected abstract id: ModelIdType
 
-  protected abstract endpoint: string
+  static path: string
+
+  static config: ModelConfig
 
   // If config is static it is available in static methods. If it is dynamic, it available in dynamic methods.
   // But we need it in both.
@@ -76,7 +78,7 @@ export abstract class BaseModel {
     this: ClassModel<T>,
     id: number,
   ): Promise<T> {
-    const url = `${this.apiUrl}/${this.name.toLowerCase()}s/${id}`;
+    const url = `${this.apiUrl}/${this.config.endpoint}s/${id}`;
     const data = await (await fetch(url)).json();
     return new this(data)
   }
@@ -84,7 +86,7 @@ export abstract class BaseModel {
   static async create<T extends BaseModel>(this: ClassModel<T>, dataOrModel: SchemaOf<T> | T): Promise<T> {
     const data = await (
       await fetch(
-        `${this.apiUrl}/${this.name.toLowerCase()}s`,
+        `${this.apiUrl}/${this.config.endpoint}s`,
         {
           method: 'POST',
           body: JSON.stringify(dataOrModel),
@@ -96,7 +98,7 @@ export abstract class BaseModel {
   }
 
   static async find<T extends BaseModel>(this: ClassModel<T>, filter?: QueryFilter): Promise<T[]> {
-    let url = `${this.apiUrl}/${this.name.toLowerCase()}s?`;
+    let url = `${this.apiUrl}/${this.config.endpoint}s?`;
     if (filter !== undefined) {
       if (filter.limit !== undefined) {
         url += `&_limit=${filter.limit}`
@@ -127,7 +129,7 @@ export abstract class BaseModel {
   static async update<T extends BaseModel>(this: ClassModel<T>, model: T): Promise<T> {
     const data = await (
       await fetch(
-        `${this.apiUrl}/${this.name.toLowerCase()}/${model.id}`,
+        `${this.apiUrl}/${this.config.endpoint}/${model.id}`,
         {
           method: 'PATCH',
           body: JSON.stringify(model),
@@ -145,7 +147,7 @@ export abstract class BaseModel {
   ): Promise<T> {
     const apiResponse = await (
       await fetch(
-        `${this.apiUrl}/${this.name.toLowerCase()}/${id}`,
+        `${this.apiUrl}/${this.config.endpoint}/${id}`,
         {
           method: 'PATCH',
           body: JSON.stringify(data),
@@ -157,26 +159,28 @@ export abstract class BaseModel {
   }
 
   static async deleteById<T extends BaseModel>(this: ClassModel<T>, id: ModelIdType): Promise<boolean> {
-    return (await fetch(`${this.apiUrl}/${this.name.toLowerCase()}/${id}`, { method: 'DELETE' })).ok
+    return (await fetch(`${this.apiUrl}/${this.config.endpoint}/${id}`, { method: 'DELETE' })).ok
   }
 
   async save<T extends BaseModel>(): Promise<T> {
-    const url = `${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`;
-    const res = await fetch(
+    // @ts-ignore
+    const url = `${BaseModel.apiUrl}/${this.constructor.config.endpoint}s/${this.id}`;
+    await fetch(
       url,
       { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this) },
     )
-    const data = await res.json();
-    // Assumes that the user always give a coherent generic type : album.save<Model>() not user.save<Model>()
+    // Assumes that the user always give a coherent generic type : album.save<Album>() not user.save<Album>()
     return this as unknown as T
   }
 
   async update<T extends BaseModel>(
     data: Partial<SchemaOf<T>>,
   ): Promise<T> {
+    // @ts-ignore
+    const url = `${BaseModel.apiUrl}/${this.constructor.config.endpoint}s/${this.id}`;
     await (
       await fetch(
-        `${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`,
+        url,
         { method: 'PUSH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify((data)) },
       )
     ).json()
@@ -184,6 +188,7 @@ export abstract class BaseModel {
   }
 
   async remove(): Promise<void> {
-    (await fetch(`${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`, { method: 'DELETE' }))
+    // @ts-ignore
+    (await fetch(`${BaseModel.apiUrl}/${this.constructor.config.endpoint}s/${this.id}`, { method: 'DELETE' }))
   }
 }

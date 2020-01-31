@@ -56,6 +56,8 @@ module.exports = {
     'no-console': 0,
     '@typescript-eslint/no-explicit-any': 0,
 
-    'max-len': ['warn', 120]
+    'max-len': ['warn', 120],
+
+    '@typescript-eslint/ban-ts-ignore': 0
   }
 };
