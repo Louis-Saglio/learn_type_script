@@ -1,7 +1,5 @@
-import Album from './models/album'
 import { QueryFilterOrder } from './models/model'
-import User from './models/user';
-import Photo from './models/photo';
+import { Album, Photo, User } from './models'
 
 async function run(): Promise<void> {
   const album = await Album.findById<Album>(1)
