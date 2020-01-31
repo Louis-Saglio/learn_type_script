@@ -67,11 +67,18 @@ export abstract class BaseModel {
   // But we need it in both.
   // protected static config: ModelConfig
 
+  constructor(data: any) {
+    // super(data.id)
+    Object.assign(this, data)
+  }
+
   static async findById<T extends BaseModel>(
     this: ClassModel<T>,
     id: number,
   ): Promise<T> {
-    return new this(await (await fetch(`${this.apiUrl}/${this.name.toLowerCase()}s/${id}`)).json())
+    const url = `${this.apiUrl}/${this.name.toLowerCase()}s/${id}`;
+    const data = await (await fetch(url)).json();
+    return new this(data)
   }
 
   static async create<T extends BaseModel>(this: ClassModel<T>, dataOrModel: SchemaOf<T> | T): Promise<T> {
@@ -154,12 +161,12 @@ export abstract class BaseModel {
   }
 
   async save<T extends BaseModel>(): Promise<T> {
-    await (
-      await fetch(
-        `${BaseModel.apiUrl}/${this.endpoint}/${this.id}`,
-        { method: 'PUSH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this) },
-      )
-    ).json()
+    const url = `${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`;
+    const res = await fetch(
+      url,
+      { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this) },
+    )
+    const data = await res.json();
     // Assumes that the user always give a coherent generic type : album.save<Model>() not user.save<Model>()
     return this as unknown as T
   }
@@ -169,7 +176,7 @@ export abstract class BaseModel {
   ): Promise<T> {
     await (
       await fetch(
-        `${BaseModel.apiUrl}/${this.endpoint}/${this.id}`,
+        `${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`,
         { method: 'PUSH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify((data)) },
       )
     ).json()
@@ -177,6 +184,6 @@ export abstract class BaseModel {
   }
 
   async remove(): Promise<void> {
-    (await fetch(`${BaseModel.apiUrl}/${this.endpoint}/${this.id}`, { method: 'DELETE' }))
+    (await fetch(`${BaseModel.apiUrl}/${this.endpoint}s/${this.id}`, { method: 'DELETE' }))
   }
 }
